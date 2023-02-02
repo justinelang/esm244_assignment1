@@ -1,0 +1,33 @@
+---
+title: "Assignment 1 Task 1"
+author: "Justine Lang"
+date: "2023-02-02"
+output: html_document
+---
+
+```{r setup, include=TRUE, message = FALSE, warning=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
+
+library(tidyverse)
+library(here)
+library(janitor)
+library(cowplot)
+library(patchwork)
+library(readxl)
+library(lubridate)
+library(AICcmodavg)
+```
+
+# Task 1
+
+
+
+
+
+
+
+
+
+
+
+
