@@ -20,6 +20,13 @@ library(AICcmodavg)
 
 # Task 1
 
+```{r}
+#read in the data
+
+amphibians <- read_xlsx(here("data", "sierra_amphibians.xlsx"))
+```
+
+
 
 
 
