@@ -26,6 +26,15 @@ library(AICcmodavg)
 amphibians <- read_xlsx(here("data", "sierra_amphibians.xlsx"))
 ```
 
+```{r}
+#filter data
+
+ramu <- amphibians %>% 
+  filter(amphibian_species=="RAMU", amphibian_life_stage !="EggMass") %>%
+  mutate(amphibian_life_stage = fct_drop(amphibian_life_stage)) %>%
+  select(survey_date, amphibian_species, amphibian_life_stage, amphibian_state, amphibian_number, amphibian_voucher) %>% 
+  drop_na()
+```
 
 
 
