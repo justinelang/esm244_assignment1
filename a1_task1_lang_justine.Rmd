@@ -15,10 +15,11 @@ library(cowplot)
 library(patchwork)
 library(readxl)
 library(lubridate)
-library(AICcmodavg)
 ```
 
 # Task 1
+
+## 1)
 
 ```{r}
 #read in the data
@@ -41,6 +42,22 @@ ramu_counts <- ramu %>%
   summarize(count = sum(amphibian_number))
 ```
 
+```{r frogs 1, fig.align='center', fig.cap="Figure 1: Total mountain yellow-legged frog (Rana muscosa) count each year (1995-2002) across all water bodies by life stage."}
+
+ramu_counts_gg <- ggplot(data = ramu_counts, aes(fill = amphibian_life_stage, x = year, y = count, color = amphibian_life_stage)) +
+  geom_col(stat = "identity", position = "dodge", color = "black") +
+  labs(x = "Year", y = "Count", title = "Total Mountain Yellow-legged Frog Count", fill = "Life Stage") +
+  theme_minimal() +
+  theme(plot.title = element_text(hjust = 0.5, face = "bold", size = 12),
+        axis.title.x = element_text(vjust = 0.2, face = "bold", size = 10),
+        axis.title.y = element_text(face = "bold", size = 10),
+        legend.title = element_text(size = 8, face = "bold"),
+        legend.text = element_text(size = 8),
+        legend.position = "top",
+        axis.text = element_text(size = 8))
+
+ramu_counts_gg
+```
 
 
 
