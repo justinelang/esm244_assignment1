@@ -2,7 +2,9 @@
 title: "Assignment 1 Task 1"
 author: "Justine Lang"
 date: "2023-02-02"
-output: html_document
+output: 
+  html_document: 
+    code_folding: hide
 ---
 
 ```{r setup, include=TRUE, message = FALSE, warning=FALSE}
@@ -42,30 +44,67 @@ ramu_counts <- ramu %>%
   summarize(count = sum(amphibian_number))
 ```
 
-```{r frogs 1, fig.align='center', fig.cap="Figure 1: Total mountain yellow-legged frog (Rana muscosa) count each year (1995-2002) across all water bodies by life stage."}
+```{r}
 
 ramu_counts_gg <- ggplot(data = ramu_counts, aes(fill = amphibian_life_stage, x = year, y = count, color = amphibian_life_stage)) +
   geom_col(stat = "identity", position = "dodge", color = "black") +
-  labs(x = "Year", y = "Count", title = "Total Mountain Yellow-legged Frog Count", fill = "Life Stage") +
+  labs(x = "Year", y = "Count", title = "Total R. muscosa Count", fill = "Life Stage") +
   theme_minimal() +
-  theme(plot.title = element_text(hjust = 0.5, face = "bold", size = 12),
-        axis.title.x = element_text(vjust = 0.2, face = "bold", size = 10),
-        axis.title.y = element_text(face = "bold", size = 10),
+  theme(plot.title = element_text(hjust = 0.4, face = "bold", size = 10),
+        axis.title.x = element_text(vjust = 0.2, face = "bold", size = 8),
+        axis.title.y = element_text(face = "bold", size = 8),
         legend.title = element_text(size = 8, face = "bold"),
         legend.text = element_text(size = 8),
         legend.position = "top",
-        axis.text = element_text(size = 8))
+        axis.text = element_text(size = 6))
 
 ramu_counts_gg
 ```
 
 
+## 2)
+
+```{r}
+#more data filtering
+
+ramu_adult <- ramu %>% 
+  filter(amphibian_life_stage != "Tadpole")
+
+ramu_adult$lake_id <- sub("^", "Lake ", ramu_adult$lake_id)
+
+top_5_lakes <- ramu_adult %>% 
+  group_by(lake_id) %>% 
+  summarize(count = sum(amphibian_number)) %>% 
+  slice_max(count, n = 5) %>% 
+  arrange(count)
+```
+
+```{r}
+
+#next graph - add caption
+
+top_lakes_gg <- ggplot(data = top_5_lakes, aes(x = reorder(lake_id, count), y = count)) +
+  geom_col(stat = "identity", color = "black", fill = "steelblue1") +
+  labs(x = "Lake ID", y = "Count", title = "Top 5 Lakes (Adults and Subadults)") +
+  theme_minimal() +
+  theme(plot.title = element_text(hjust = 0.5, face = "bold", size = 10),
+        axis.title.x = element_text(vjust = 0.2, face = "bold", size = 8),
+        axis.title.y = element_text(face = "bold", size = 8),
+        axis.text = element_text(size = 6))
+
+top_lakes_gg
+```
+
+```{r figure 1, fig.align='center', fig.cap="Figure 1: Mountain yellow-legged frog (Rana muscosa) counts 1995-2002. A. Total counts each year across all water bodies, by life stage. B. Combined adult and subadult counts observed in the 5 lakes with the greatest total observed counts over all years of the study."}
+
+#combine figures - add caption
+
+plot_grid(ramu_counts_gg, top_lakes_gg, labels = c('A', 'B'))
+```
 
 
-
-
-
-
-
-
+Data citation: Knapp, R.A., C. Pavelka, E.E. Hegeman, and T.C. Smith. 2020. The Sierra Lakes
+Inventory Project: Non-Native fish and community composition of lakes and ponds in the Sierra
+Nevada, California ver 2. Environmental Data Initiative.
+https://doi.org/10.6073/pasta/d835832d7fd00d9e4466e44eea87fab3
 
