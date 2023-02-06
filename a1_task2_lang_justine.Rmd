@@ -1,0 +1,46 @@
+---
+title: "Assignment 1 Task 2"
+author: "Justine Lang"
+date: "2023-02-06"
+output: 
+  html_document: 
+    code_folding: hide
+---
+
+```{r setup, include=TRUE, message=FALSE, warning=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message=FALSE, warning=FALSE)
+
+#Install packages
+
+library(here)
+library(AICcmodavg)
+library(tidyverse)
+library(kableExtra)
+```
+
+## Data Overview
+
+California Cooperative Oceanic Fisheries Investigations (CalCOFI) has collected hydrographic and biological data on the California Current System since 1949. This data set includes a time-series of temperature, salinity, oxygen, phosphate, silicate, nitrate/nitrite, and chlorophyll, among other observations (CalCOFI, n.d.). This analysis will explore the relationship between the O2 saturation of seawater off California’s coast and several physical and chemical variables. 
+
+```{r}
+#Read in the data
+
+seawater <- read_csv(here("data", "calcofi_seawater_samples.csv"))
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
