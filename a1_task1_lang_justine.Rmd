@@ -10,42 +10,55 @@ output:
 ```{r setup, include=TRUE, message = FALSE, warning=FALSE}
 knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
 
+#Install packages
+
 library(tidyverse)
 library(here)
-library(janitor)
 library(cowplot)
-library(patchwork)
 library(readxl)
 library(lubridate)
 ```
 
-# Task 1
+## Data Overview
 
-## 1)
+This data exploration will analyze amphibian abundance data gathered by the Sierra Lakes Inventory Project (SLIP) from 1995 to 2002. SLIP surveyed aquatic communities for more than 8000 freshwater bodies in the southern Sierra Nevada and has supported the research and management of Sierra Nevada aquatic ecosystems (Knapp et al., 2020). This exploration of SLIP data will specifically visualize mountain yellow-legged frog (*Rana muscosa*) abundance in Sierra Nevada lakes. 
+
+
+## Part 1: Creating a graph of *R. muscosa* count by life stage
+
+### Data Wrangling
+
+Filter and group data to find the total *R. muscosa* count each year across all water bodies, by life stage (adult, subadult, and tadpole). 
 
 ```{r}
-#read in the data
+#Read in the data
 
 amphibians <- read_xlsx(here("data", "sierra_amphibians.xlsx"))
 ```
 
 ```{r}
-#filter data
+#Filter data by species and life stage, excluding EggMass; make a column with just the year
 
 ramu <- amphibians %>% 
   filter(amphibian_species=="RAMU", amphibian_life_stage !="EggMass") %>%
   mutate(date = ymd(survey_date)) %>% 
   mutate(year = year(date)) %>% 
-  select(year, amphibian_species, amphibian_life_stage, amphibian_number, lake_id, amphibian_location) %>% 
+  select(year, amphibian_species, amphibian_life_stage, amphibian_number, lake_id) %>% 
   drop_na()
+
+#Group by year and life stage to get the counts
 
 ramu_counts <- ramu %>% 
   group_by(year, amphibian_life_stage) %>% 
   summarize(count = sum(amphibian_number))
 ```
 
-```{r}
 
+### Create a Graph
+
+Graph the total *R. muscosa* count each year across all water bodies, by life stage (adult, subadult, and tadpole).
+
+```{r}
 ramu_counts_gg <- ggplot(data = ramu_counts, aes(fill = amphibian_life_stage, x = year, y = count, color = amphibian_life_stage)) +
   geom_col(stat = "identity", position = "dodge", color = "black") +
   labs(x = "Year", y = "Count", title = "Total R. muscosa Count", fill = "Life Stage") +
@@ -62,15 +75,23 @@ ramu_counts_gg
 ```
 
 
-## 2)
+## Part 2: Creating a graph of total counts in top 5 lakes
+
+### Data Wrangling
+
+Filter and group data to find total counts of combined adult and subadult *R. muscosa* in the 5 lakes with the greatest total observed counts, over all years of the study. 
 
 ```{r}
-#more data filtering
+#Filter data to include only adults and subadults
 
 ramu_adult <- ramu %>% 
   filter(amphibian_life_stage != "Tadpole")
 
+#Rename lake_id columns to include "Lake"
+
 ramu_adult$lake_id <- sub("^", "Lake ", ramu_adult$lake_id)
+
+#Find top five lakes
 
 top_5_lakes <- ramu_adult %>% 
   group_by(lake_id) %>% 
@@ -79,10 +100,12 @@ top_5_lakes <- ramu_adult %>%
   arrange(count)
 ```
 
+
+### Create a Graph
+
+Graph the total counts of combined adult and subadult *R. muscosa* in the 5 lakes with the greatest total observed counts, over all years of the study.
+
 ```{r}
-
-#next graph - add caption
-
 top_lakes_gg <- ggplot(data = top_5_lakes, aes(x = reorder(lake_id, count), y = count)) +
   geom_col(stat = "identity", color = "black", fill = "steelblue1") +
   labs(x = "Lake ID", y = "Count", title = "Top 5 Lakes (Adults and Subadults)") +
@@ -95,16 +118,16 @@ top_lakes_gg <- ggplot(data = top_5_lakes, aes(x = reorder(lake_id, count), y = 
 top_lakes_gg
 ```
 
-```{r figure 1, fig.align='center', fig.cap="Figure 1: Mountain yellow-legged frog (Rana muscosa) counts 1995-2002. A. Total counts each year across all water bodies, by life stage. B. Combined adult and subadult counts observed in the 5 lakes with the greatest total observed counts over all years of the study."}
 
-#combine figures - add caption
+## Part 3: Combine graphs
+
+```{r figure 1, fig.align='center', fig.cap="Figure 1: Mountain yellow-legged frog (Rana muscosa) counts from 1995-2002. A. Shows total counts each year across all water bodies, by life stage. B. Shows combined adult and subadult counts observed in the 5 lakes with the greatest total observed counts over all years of the study."}
 
 plot_grid(ramu_counts_gg, top_lakes_gg, labels = c('A', 'B'))
 ```
 
 
-Data citation: Knapp, R.A., C. Pavelka, E.E. Hegeman, and T.C. Smith. 2020. The Sierra Lakes
-Inventory Project: Non-Native fish and community composition of lakes and ponds in the Sierra
-Nevada, California ver 2. Environmental Data Initiative.
-https://doi.org/10.6073/pasta/d835832d7fd00d9e4466e44eea87fab3
+## Citation
+
+Knapp, R.A., C. Pavelka, E.E. Hegeman, and T.C. Smith. 2020. The Sierra Lakes Inventory Project: Non-Native fish and community composition of lakes and ponds in the Sierra Nevada, California ver 2. Environmental Data Initiative. https://doi.org/10.6073/pasta/d835832d7fd00d9e4466e44eea87fab3
 
