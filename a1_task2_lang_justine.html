@@ -701,7 +701,7 @@ seawater &lt;- read_csv(here(&quot;data&quot;, &quot;calcofi_seawater_samples.cs
 <p>This analysis will compare two multiple linear regression models: 1)
 O2 saturation as a function of water temperature, salinity, and
 phosphate concentration, and 2) O2 saturation as a function of water
-temp, salinity, phosphate concentration, and depth.</p>
+temperature, salinity, phosphate concentration, and depth.</p>
 <pre class="r"><code>#Formula 1: O2 as a function of temp, salinity, and phosphate
 
 f1 &lt;- o2sat ~ t_deg_c + salinity + po4u_m
@@ -720,7 +720,7 @@ mdl2 &lt;- lm(f2, data = seawater)</code></pre>
 <h2>AIC Model Selection</h2>
 <p>Akaike Information Criteria (AIC) balances model fit with parsimony.
 A model with low AIC is generally the better fit. In Table 1 below,
-despite having one more parameter, Model 2 has the lowest AIC, which
+despite having one more parameter, Model 2 has the lower AIC, which
 suggests it is the better fit. A Delta AIC greater than 2 also provides
 positive evidence in favor of Model 2.</p>
 <pre class="r"><code>#Get AIC and create a table for the results
@@ -1043,7 +1043,7 @@ Mean RMSE Model 2
 </tr>
 </tbody>
 </table>
-<p>As Table 3 shows, Model 2 has the lowest RMSE, which suggests it is
+<p>As Table 3 shows, Model 2 has the lower RMSE, which suggests it is
 the better fit.</p>
 <pre class="r"><code>#Use the entire dataset to parameterize, based on Model 2
 
