@@ -20,7 +20,7 @@ library(kableExtra)
 
 ## Data Overview
 
-California Cooperative Oceanic Fisheries Investigations (CalCOFI) has collected hydrographic and biological data on the California Current System since 1949. This data set includes a time-series of temperature, salinity, oxygen, phosphate, silicate, nitrate/nitrite, and chlorophyll, among other observations (CalCOFI, n.d.). This analysis will explore the relationship between the O2 saturation of seawater off California’s coast and several physical and chemical variables. 
+California Cooperative Oceanic Fisheries Investigations (CalCOFI) has collected hydrographic and biological data on the California Current System since 1949. This data set includes a time-series of temperature, salinity, oxygen, phosphate, silicate, nitrate/nitrite, and chlorophyll, among other observations (CalCOFI, n.d.). This analysis will explore the relationship between the oxygen saturation of seawater off California’s coast and several physical and chemical variables. 
 
 ```{r}
 #Read in the data
@@ -28,7 +28,181 @@ California Cooperative Oceanic Fisheries Investigations (CalCOFI) has collected 
 seawater <- read_csv(here("data", "calcofi_seawater_samples.csv"))
 ```
 
+## Create formulas for the models
 
+This analysis will compare two multiple linear regression models: 1) O2 saturation as a function of water temperature, salinity, and phosphate concentration, and 2) O2 saturation as a function of water temp, salinity, phosphate concentration, and depth.
+
+```{r}
+#Formula 1: O2 as a function of temp, salinity, and phosphate
+
+f1 <- o2sat ~ t_deg_c + salinity + po4u_m
+
+#Formula 2: O2 as a function of temp, salinity, phosphate, and depth
+
+f2 <- o2sat ~ t_deg_c + salinity + po4u_m + depth_m
+
+#Create the linear models
+
+mdl1 <- lm(f1, data = seawater)
+
+mdl2 <- lm(f2, data = seawater)
+```
+
+
+## AIC Model Selection
+
+Akaike Information Criteria (AIC) balances model fit with parsimony. A model with low AIC is generally the better fit. In Table 1 below, despite having one more parameter, Model 2 has the lowest AIC, which suggests it is the better fit. A Delta AIC greater than 2 also provides positive evidence in favor of Model 2. 
+
+```{r}
+#Get AIC and create a table for the results
+
+aictab(list(mdl1, mdl2)) %>% 
+  kable(col.names = c("Model", "Parameters", "AIC", "Delta AIC", "Model Likelihood", "AIC Weight", "Log Likelihood", "Cumulative Weight"),
+        caption = "Table 1: AIC Results") %>% 
+  kable_classic(position = "center")
+```
+
+
+## BIC Model Selection
+
+Bayesian Information Criterion (BIC) is similar to AIC, but it places a larger penalty on parameters, particularly when n is large. Like AIC, a model with low BIC is generally considered the better fit. In Table 2 below, despite having one more parameter, Model 2 has the lower BIC, which suggests it still may be the better fit. 
+
+```{r}
+#Get BIC and create a table for the results
+
+bictab(list(mdl1, mdl2)) %>% 
+  kable(col.names = c("Model", "Parameters", "BIC", "Delta BIC", "Model Likelihood", "BIC Weight", "Log Likelihood", "Cumulative Weight"),
+        caption = "Table 2: BIC Results") %>% 
+  kable_classic(position = "center")
+```
+
+
+## Ten-fold Cross Validation Selection
+
+Cross validation reserves a subset of data (test data) and trains the model using the rest (training data) to estimate the model parameters. The parameterized model is then used on the test data to see how well it predicts. Root-mean-square-error (RMSE) can be used to select the model; the model with the lowest RMSE is generally considered the better fit. 
+
+```{r}
+#Use 10 folds
+
+folds <- 10
+fold_vec <- rep(1:folds, length.out = nrow(seawater))
+
+#Set the seed for reproducibility
+
+set.seed(42)
+seawater_fold <- seawater %>%
+  mutate(group = sample(fold_vec, size = n(), replace = FALSE))
+
+#table(seawater_fold$group)
+```
+
+```{r}
+#Fold 1
+
+test_df <- seawater_fold %>%
+  filter(group == 1)
+
+train_df <- seawater_fold %>%
+  filter(group != 1)
+```
+
+```{r}
+#RMSE function
+
+calc_rmse <- function(x, y) {
+  rmse <- (x - y)^2 %>% mean() %>% sqrt()
+  return(rmse)
+}
+```
+
+```{r}
+#Use the training dataset to create two linear models, based on models 1 and 2.
+
+training_lm1 <- lm(f1, data = train_df)
+
+training_lm2 <- lm(f2, data = train_df)
+```
+
+```{r}
+#Use these models to predict the O2 saturation in the testing dataset, then use the RMSE function to see how well the predictions went
+
+predict_test <- test_df %>%
+  mutate(model1 = predict(training_lm1, test_df),
+         model2 = predict(training_lm2, test_df))
+
+rmse_predict_test <- predict_test %>%
+  summarize(rmse_mdl1 = calc_rmse(model1, o2sat),
+            rmse_mdl2 = calc_rmse(model2, o2sat))
+
+#rmse_predict_test
+```
+
+```{r}
+#Iterate for each group to have a turn being the testing data, using the other groups as training
+
+rmse_df <- data.frame()
+
+for(i in 1:folds) {
+  
+  kfold_test_df <- seawater_fold %>%
+    filter(group == i)
+  kfold_train_df <- seawater_fold %>%
+    filter(group != i)
+  
+  kfold_lm1 <- lm(f1, data = kfold_train_df)
+  kfold_lm2 <- lm(f2, data = kfold_train_df)
+  
+  kfold_pred_df <- kfold_test_df %>%
+    mutate(mdl1 = predict(kfold_lm1, kfold_test_df),
+           mdl2 = predict(kfold_lm2, .))
+  
+    kfold_rmse <- kfold_pred_df %>%
+    summarize(rmse_mdl1 = calc_rmse(mdl1, o2sat),
+              rmse_mdl2 = calc_rmse(mdl2, o2sat),
+              test_gp = i)  
+    
+    rmse_df <- bind_rows(rmse_df, kfold_rmse)
+}
+```
+
+```{r}
+#Put the results in a table
+
+#rmse_df
+
+rmse_df %>% 
+  summarize(mean_rmse_mdl1 = mean(rmse_mdl1),
+            mean_rmse_mdl2 = mean(rmse_mdl2)) %>% 
+  kable(col.names = c("Mean RMSE Model 1", "Mean RMSE Model 2"),
+        caption = "Table 3: Mean RMSE Results") %>% 
+  kable_classic(position = "center")
+```
+
+As Table 3 shows, Model 2 has the lowest RMSE, which suggests it is the better fit. 
+
+
+```{r}
+#Use the entire dataset to parameterize, based on Model 2
+
+final_mdl <- lm(f2, data = seawater)
+#summary(final_mdl)
+```
+
+
+## Final Model
+
+`r equatiomatic::extract_eq(mdl2, wrap = TRUE)`
+
+and with coefficients in place:
+
+`r equatiomatic::extract_eq(mdl2, wrap = TRUE, use_coefs = TRUE)`
+
+All three methods used to select the model (AIC, BIC, and ten-fold cross validation) indicate that Model 2 is the better one. 
+
+
+## Citation
+
+CalCOFI data are available for use without restriction. Data downloaded from https://calcofi.org/ccdata.html. Accessed 1/10/2022.
 
 
 
